@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, ChevronRight, Dumbbell, Activity, Users, ArrowUpRight, Check, Target, Camera, BookOpen, Star, Trash2, Shield, LogOut, ChevronLeft, Heart, MessageSquare, X } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, ChevronRight, Dumbbell, Activity, Users, ArrowUpRight, Check, Target, Camera, BookOpen, Star, Trash2, Shield, LogOut, ChevronLeft, Heart, MessageSquare, X, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, signInWithGoogle, logOut } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -69,6 +69,7 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -372,15 +373,24 @@ export default function App() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-40 glass border-b-0">
         <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-          <div className="font-display font-bold text-2xl tracking-tighter text-gym-beige flex items-center gap-2">
-            <div className="w-8 h-8 bg-gym-beige rounded-sm flex items-center justify-center text-gym-black">
-              <Dumbbell className="w-5 h-5" />
+          <div className="flex items-center gap-4">
+            <button 
+              className="sm:hidden p-2 -ml-2 text-gym-beige hover:text-white transition-colors"
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="font-display font-bold text-xl sm:text-2xl tracking-tighter text-gym-beige flex items-center gap-2">
+              <div className="w-8 h-8 bg-gym-beige rounded-sm flex items-center justify-center text-gym-black shrink-0">
+                <Dumbbell className="w-5 h-5" />
+              </div>
+              <span className="hidden xs:inline">4M- R FITNESS</span>
+              <span className="xs:hidden">4M-R</span>
             </div>
-            4M- R FITNESS
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             {user ? (
-              <div className="flex items-center gap-6">
+              <div className="hidden sm:flex items-center gap-6">
                 {isAdmin && (
                   <button 
                     onClick={() => setShowAdminPanel(!showAdminPanel)}
@@ -392,7 +402,7 @@ export default function App() {
                 )}
                 <button 
                   onClick={logOut}
-                  className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out
@@ -408,7 +418,7 @@ export default function App() {
             )}
             <a 
               href={`tel:${phoneNumber}`}
-              className="group relative flex items-center gap-2 text-sm font-bold bg-gym-beige text-gym-black px-6 py-3 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
+              className="group relative flex items-center gap-2 text-sm font-bold bg-gym-beige text-gym-black px-4 sm:px-6 py-3 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
             >
               <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
               <Phone className="w-4 h-4 relative z-10" />
@@ -417,6 +427,70 @@ export default function App() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            className="fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-gym-beige/10 shadow-2xl p-6 flex flex-col sm:hidden"
+          >
+            <div className="flex justify-between items-center mb-12">
+              <div className="font-display font-bold text-xl tracking-tighter text-gym-beige flex items-center gap-2">
+                <div className="w-8 h-8 bg-gym-beige rounded-sm flex items-center justify-center text-gym-black shrink-0">
+                  <Dumbbell className="w-5 h-5" />
+                </div>
+                4M-R
+              </div>
+              <button onClick={() => setShowMobileMenu(false)} className="text-gray-400 hover:text-white">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              {user ? (
+                <>
+                  <div className="text-sm text-gray-500 mb-2 truncate">Signed in as {user.email}</div>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => {
+                        setShowAdminPanel(true);
+                        setShowMobileMenu(false);
+                      }}
+                      className="flex items-center gap-3 text-lg font-medium text-gym-beige hover:text-white transition-colors uppercase tracking-widest"
+                    >
+                      <Shield className="w-5 h-5" />
+                      Admin Panel
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      logOut();
+                      setShowMobileMenu(false);
+                    }}
+                    className="flex items-center gap-3 text-lg font-medium text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => {
+                    signInWithGoogle();
+                    setShowMobileMenu(false);
+                  }}
+                  className="flex items-center gap-3 text-lg font-medium text-gym-beige hover:text-white transition-colors uppercase tracking-widest"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Panel Overlay */}
       <AnimatePresence>
@@ -1162,7 +1236,7 @@ export default function App() {
       <section id="contact" className="py-32 px-6 bg-gym-black relative">
         <div className="max-w-7xl mx-auto">
           <motion.div 
-            className="bg-zinc-900/80 backdrop-blur-xl rounded-[3rem] p-8 sm:p-16 border border-white/10 shadow-2xl relative overflow-hidden"
+            className="bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-16 border border-white/10 shadow-2xl relative overflow-hidden"
             {...fadeIn}
           >
             <div className="absolute top-0 right-0 w-96 h-96 bg-gym-beige/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -1171,47 +1245,47 @@ export default function App() {
                 <h2 className="font-display text-4xl sm:text-6xl font-bold uppercase mb-6">Ready to start?</h2>
                 <p className="text-gray-400 mb-12 text-xl font-light">Drop by the gym or reach out to us for membership inquiries.</p>
                 
-                <div className="space-y-8">
-                  <a href={`tel:${phoneNumber}`} className="flex items-center gap-6 group">
-                    <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-gym-beige group-hover:text-gym-black group-hover:scale-110 transition-all duration-300">
-                      <Phone className="w-6 h-6" />
+                <div className="space-y-8 w-full overflow-hidden">
+                  <a href={`tel:${phoneNumber}`} className="flex items-center gap-4 sm:gap-6 group w-full">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-gym-beige group-hover:text-gym-black group-hover:scale-110 transition-all duration-300">
+                      <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Call Us</div>
-                      <div className="font-medium text-2xl group-hover:text-gym-beige transition-colors">{phoneNumber}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs sm:text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Call Us</div>
+                      <div className="font-medium text-lg sm:text-2xl group-hover:text-gym-beige transition-colors truncate">{phoneNumber}</div>
                     </div>
                   </a>
                   
-                  <a href={`mailto:${email}`} className="flex items-center gap-6 group">
-                    <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-gym-beige group-hover:text-gym-black group-hover:scale-110 transition-all duration-300">
-                      <Mail className="w-6 h-6" />
+                  <a href={`mailto:${email}`} className="flex items-center gap-4 sm:gap-6 group w-full">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-gym-beige group-hover:text-gym-black group-hover:scale-110 transition-all duration-300">
+                      <Mail className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Email Us</div>
-                      <div className="font-medium text-xl group-hover:text-gym-beige transition-colors">{email}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs sm:text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Email Us</div>
+                      <div className="font-medium text-base sm:text-xl group-hover:text-gym-beige transition-colors break-all">{email}</div>
                     </div>
                   </a>
 
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                      <Clock className="w-6 h-6" />
+                  <div className="flex items-center gap-4 sm:gap-6 w-full">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                      <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Opening Hours</div>
-                      <div className="font-medium text-xl">Mon - Sun: 5:30 AM – 10:00 PM</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs sm:text-sm text-gray-500 uppercase tracking-wider font-bold mb-1">Opening Hours</div>
+                      <div className="font-medium text-base sm:text-xl whitespace-normal">Mon - Sun: 5:30 AM – 10:00 PM</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col">
-                <div className="bg-gym-black p-10 rounded-3xl border border-white/5 flex-grow flex flex-col justify-between shadow-inner">
+                <div className="bg-gym-black p-6 sm:p-10 rounded-[2rem] sm:rounded-3xl border border-white/5 flex-grow flex flex-col justify-between shadow-inner">
                   <div>
                     <div className="flex items-start gap-4 mb-6">
-                      <MapPin className="w-8 h-8 text-gym-beige shrink-0 mt-1" />
+                      <MapPin className="w-6 h-6 sm:w-8 sm:h-8 text-gym-beige shrink-0 mt-1" />
                       <div>
-                        <h4 className="font-bold text-2xl mb-3 font-display">Location</h4>
-                        <p className="text-gray-400 leading-relaxed text-lg font-light">
+                        <h4 className="font-bold text-xl sm:text-2xl mb-2 sm:mb-3 font-display">Location</h4>
+                        <p className="text-gray-400 leading-relaxed text-base sm:text-lg font-light">
                           {address}
                         </p>
                       </div>
@@ -1221,7 +1295,7 @@ export default function App() {
                     href={mapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-10 w-full flex items-center justify-center gap-3 bg-gym-beige text-gym-black px-8 py-5 rounded-full font-bold uppercase tracking-wider hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg"
+                    className="mt-8 sm:mt-10 w-full flex items-center justify-center gap-2 sm:gap-3 bg-gym-beige text-gym-black px-6 sm:px-8 py-4 sm:py-5 rounded-full font-bold text-sm sm:text-base uppercase tracking-wider hover:bg-white hover:scale-105 transition-all duration-300 shadow-lg"
                   >
                     Get Directions
                     <ChevronRight className="w-6 h-6" />
