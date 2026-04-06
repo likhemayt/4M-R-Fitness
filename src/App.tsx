@@ -528,7 +528,16 @@ export default function App() {
                     {testimonials.map(t => (
                       <div key={t.id} className="bg-zinc-950 p-4 rounded-xl border border-gym-beige/10">
                         <div className="flex justify-between items-start mb-2">
-                          <div className="font-bold">{t.name}</div>
+                          <div className="flex items-center gap-3">
+                            {t.imageUrl ? (
+                              <img src={t.imageUrl} alt={t.name} className="w-8 h-8 rounded-full object-cover border border-gym-beige/20" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gym-black flex items-center justify-center border border-gym-beige/20">
+                                <User className="w-4 h-4 text-gym-beige" />
+                              </div>
+                            )}
+                            <div className="font-bold">{t.name}</div>
+                          </div>
                           <div className="flex gap-2">
                             {t.status === 'pending' && (
                               <button onClick={() => handleApproveTestimonial(t.id)} className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded hover:bg-green-500/30">Approve</button>

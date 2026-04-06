@@ -56,6 +56,10 @@
           "type": "string",
           "description": "The testimonial content."
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional profile picture base64 string."
+        },
         "rating": {
           "type": "number",
           "description": "Star rating (1-5)."
