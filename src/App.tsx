@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, ChevronRight, Dumbbell, Activity, Users, ArrowUpRight, Check, Target, Camera, BookOpen, Star, Trash2, Shield, LogOut, ChevronLeft, Heart, MessageSquare, X, Menu } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, ChevronRight, Dumbbell, Activity, Users, ArrowUpRight, Check, Target, Camera, BookOpen, Star, Trash2, Shield, LogOut, ChevronLeft, Heart, MessageSquare, X, Menu, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db, signInWithGoogle, logOut } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -150,6 +150,7 @@ export default function App() {
   // Testimonials State
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [newTestimonial, setNewTestimonial] = useState({ name: "", text: "" });
+  const [testimonialImageFile, setTestimonialImageFile] = useState<File | null>(null);
   const [currentTestimonialIdx, setCurrentTestimonialIdx] = useState(0);
 
   useEffect(() => {
@@ -177,14 +178,26 @@ export default function App() {
       return;
     }
     if (newTestimonial.name && newTestimonial.text) {
+      let imageUrl = "";
+      if (testimonialImageFile) {
+        try {
+          imageUrl = await compressImage(testimonialImageFile);
+        } catch (err) {
+          showToast("Failed to process image.", "error");
+          return;
+        }
+      }
+
       await addDoc(collection(db, 'testimonials'), {
         name: newTestimonial.name,
         text: newTestimonial.text,
+        imageUrl: imageUrl,
         rating: 5,
         status: 'pending',
         createdAt: new Date().toISOString()
       });
       setNewTestimonial({ name: "", text: "" });
+      setTestimonialImageFile(null);
       showToast("Testimonial submitted for approval!");
     }
   };
@@ -1112,9 +1125,22 @@ export default function App() {
                           {[...Array(approvedTestimonials[currentTestimonialIdx].rating)].map((_, i) => <Star key={i} className="w-6 h-6 fill-gym-black text-gym-black" />)}
                         </div>
                         <p className="text-2xl sm:text-3xl font-medium mb-10 leading-relaxed font-display">"{approvedTestimonials[currentTestimonialIdx].text}"</p>
-                        <div className="font-bold uppercase tracking-widest text-sm flex items-center gap-4">
-                          <div className="w-10 h-px bg-gym-black" />
-                          {approvedTestimonials[currentTestimonialIdx].name}
+                        <div className="flex items-center gap-4">
+                          {approvedTestimonials[currentTestimonialIdx].imageUrl ? (
+                            <img 
+                              src={approvedTestimonials[currentTestimonialIdx].imageUrl} 
+                              alt={approvedTestimonials[currentTestimonialIdx].name} 
+                              className="w-12 h-12 rounded-full object-cover border-2 border-gym-black shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gym-black flex items-center justify-center shrink-0">
+                              <User className="w-6 h-6 text-gym-beige" />
+                            </div>
+                          )}
+                          <div className="font-bold uppercase tracking-widest text-sm flex items-center gap-4">
+                            <div className="w-10 h-px bg-gym-black" />
+                            {approvedTestimonials[currentTestimonialIdx].name}
+                          </div>
                         </div>
                       </motion.div>
                     </AnimatePresence>
@@ -1170,6 +1196,18 @@ export default function App() {
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-gym-beige transition-colors resize-none"
                     placeholder="Tell us about your progress..."
                   />
+                </div>
+                <div>
+                  <label className="cursor-pointer flex items-center justify-center gap-2 w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-gray-400 hover:text-gym-beige hover:border-gym-beige transition-colors text-sm font-bold uppercase tracking-wider">
+                    <Camera className="w-5 h-5" />
+                    {testimonialImageFile ? testimonialImageFile.name : "Upload Profile Photo (Optional)"}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={e => setTestimonialImageFile(e.target.files?.[0] || null)} 
+                    />
+                  </label>
                 </div>
                 <button 
                   type="submit"
