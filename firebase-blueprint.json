@@ -1,0 +1,180 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address."
+        },
+        "name": {
+          "type": "string",
+          "description": "User's display name."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "user"],
+          "description": "User's role."
+        }
+      },
+      "required": ["email", "role"]
+    },
+    "GalleryImage": {
+      "title": "Gallery Image",
+      "description": "An image uploaded to the gallery.",
+      "type": "object",
+      "properties": {
+        "imageUrl": {
+          "type": "string",
+          "description": "Base64 encoded image data."
+        },
+        "uploaderId": {
+          "type": "string",
+          "description": "UID of the user who uploaded the image."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of upload."
+        }
+      },
+      "required": ["imageUrl", "uploaderId", "createdAt"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "A client testimonial.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the client."
+        },
+        "text": {
+          "type": "string",
+          "description": "The testimonial content."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Star rating (1-5)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved"],
+          "description": "Approval status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation."
+        }
+      },
+      "required": ["name", "text", "rating", "status", "createdAt"]
+    },
+    "Blog": {
+      "title": "Blog Post",
+      "description": "A gym update or blog post.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the post."
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "Short summary of the post."
+        },
+        "content": {
+          "type": "string",
+          "description": "Full content of the post."
+        },
+        "date": {
+          "type": "string",
+          "description": "Formatted date string."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of creation."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the author."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "User ID of the author."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional base64 featured image."
+        },
+        "likes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Array of user IDs who liked the post."
+        }
+      },
+      "required": ["title", "excerpt", "content", "date", "createdAt", "authorName", "authorId"]
+    },
+    "Comment": {
+      "title": "Blog Comment",
+      "description": "A comment on a blog post.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The comment text."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the commenter."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "User ID of the commenter."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of creation."
+        }
+      },
+      "required": ["text", "authorName", "authorId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles and roles."
+    },
+    "/gallery/{imageId}": {
+      "schema": {
+        "$ref": "#/entities/GalleryImage"
+      },
+      "description": "Stores gallery images."
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": {
+        "$ref": "#/entities/Testimonial"
+      },
+      "description": "Stores client testimonials."
+    },
+    "/blogs/{blogId}": {
+      "schema": {
+        "$ref": "#/entities/Blog"
+      },
+      "description": "Stores blog posts and updates."
+    },
+    "/blogs/{blogId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/Comment"
+      },
+      "description": "Stores comments for a specific blog post."
+    }
+  }
+}

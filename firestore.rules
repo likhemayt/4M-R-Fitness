@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - email: string (required, < 100 chars)
+    //   - name: string (optional, < 100 chars)
+    //   - role: string (required, 'admin' or 'user')
+    //
+    // Collection: gallery
+    // Document ID: imageId
+    // Fields:
+    //   - imageUrl: string (required, base64, < 1MB)
+    //   - uploaderId: string (required, matches auth.uid)
+    //   - createdAt: string (required)
+    //
+    // Collection: testimonials
+    // Document ID: testimonialId
+    // Fields:
+    //   - name: string (required, < 100 chars)
+    //   - text: string (required, < 1000 chars)
+    //   - rating: number (required, 1-5)
+    //   - status: string (required, 'pending' or 'approved')
+    //   - createdAt: string (required)
+    //
+    // Collection: blogs
+    // Document ID: blogId
+    // Fields:
+    //   - title: string (required, < 200 chars)
+    //   - excerpt: string (required, < 500 chars)
+    //   - content: string (required, < 100000 chars)
+    //   - date: string (required, < 50 chars)
+    //   - createdAt: string (required)
+    //   - authorName: string (required, < 100 chars)
+    //   - authorId: string (required)
+    //   - imageUrl: string (optional, base64, < 1MB)
+    //   - likes: list (optional)
+    //
+    // Collection: comments (Subcollection of blogs)
+    // Document ID: commentId
+    // Fields:
+    //   - text: string (required, < 1000 chars)
+    //   - authorName: string (required, < 100 chars)
+    //   - authorId: string (required)
+    //   - createdAt: string (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "likhemayt@gmail.com" && request.auth.token.email_verified == true));
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    // Domain Validators
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['email', 'name', 'role']) &&
+             data.email is string && data.email.size() > 0 && data.email.size() < 100 &&
+             (!('name' in data) || (data.name is string && data.name.size() < 100)) &&
+             data.role in ['admin', 'user'];
+    }
+    
+    function isValidGalleryImage(data) {
+      return hasOnlyAllowedFields(['imageUrl', 'uploaderId', 'createdAt']) &&
+             data.imageUrl is string && data.imageUrl.size() < 1048576 &&
+             data.uploaderId is string && data.uploaderId == request.auth.uid &&
+             data.createdAt is string;
+    }
+    
+    function isValidTestimonial(data) {
+      return hasOnlyAllowedFields(['name', 'text', 'rating', 'status', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 1000 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.status in ['pending', 'approved'] &&
+             data.createdAt is string;
+    }
+    
+    function isValidBlog(data) {
+      return hasOnlyAllowedFields(['title', 'excerpt', 'content', 'date', 'createdAt', 'authorName', 'authorId', 'imageUrl', 'likes']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.excerpt is string && data.excerpt.size() > 0 && data.excerpt.size() < 500 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 100000 &&
+             data.date is string && data.date.size() < 50 &&
+             data.createdAt is string &&
+             data.authorName is string && data.authorName.size() < 100 &&
+             data.authorId is string &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() < 1048576)) &&
+             (!('likes' in data) || (data.likes is list && data.likes.size() < 10000));
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    match /gallery/{imageId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidGalleryImage(request.resource.data);
+      allow update: if isAdmin() && isValidGalleryImage(request.resource.data);
+      allow delete: if (isAuthenticated() && resource.data.uploaderId == request.auth.uid) || isAdmin();
+    }
+    
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidTestimonial(request.resource.data) && request.resource.data.status == 'pending';
+      allow update: if isAdmin() && isValidTestimonial(request.resource.data);
+      allow delete: if isAdmin();
+    }
+    
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidBlog(request.resource.data);
+      allow update: if isAdmin() && isValidBlog(request.resource.data) ||
+                    (isAuthenticated() && 
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']) &&
+                     isValidBlog(request.resource.data));
+      allow delete: if isAdmin();
+      
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && 
+                      hasOnlyAllowedFields(['text', 'authorName', 'authorId', 'createdAt']) &&
+                      request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() < 1000 &&
+                      request.resource.data.authorName is string && request.resource.data.authorName.size() < 100 &&
+                      request.resource.data.authorId is string && request.resource.data.authorId == request.auth.uid &&
+                      request.resource.data.createdAt is string;
+        allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      }
+    }
+  }
+}
