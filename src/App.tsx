@@ -267,18 +267,28 @@ export default function App() {
         }
       }
 
-      await addDoc(collection(db, 'blogs'), {
+      const blogData: any = {
         ...newBlog,
         authorName: user.displayName || user.email,
         authorId: user.uid,
-        imageUrl,
         likes: [],
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         createdAt: new Date().toISOString()
-      });
-      setNewBlog({ title: "", excerpt: "", content: "" });
-      setBlogImageFile(null);
-      showToast("Blog published!");
+      };
+      
+      if (imageUrl) {
+        blogData.imageUrl = imageUrl;
+      }
+
+      try {
+        await addDoc(collection(db, 'blogs'), blogData);
+        setNewBlog({ title: "", excerpt: "", content: "" });
+        setBlogImageFile(null);
+        showToast("Blog published!");
+      } catch (error) {
+        console.error("Error publishing blog:", error);
+        showToast("Failed to publish blog. Please try again.", "error");
+      }
     }
   };
 
